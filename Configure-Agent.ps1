@@ -175,7 +175,7 @@ Process {
         }
     }
 
-
+<#
     #initialize and format datadisk
     $newdisk = @(get-disk | Where-Object partitionstyle -eq 'raw')
     $Labels = @('agentdisk', 'Data', 'System', 'OS', 'Data', 'System')
@@ -189,7 +189,7 @@ Process {
         Format-Volume -driveletter $dl.Driveletter -FileSystem NTFS -NewFileSystemLabel $Labels[$i] -Confirm:$false
 
     }
-
+#>
     $Software = $null
 
     if (Test-Path -Path .\software.json) {
