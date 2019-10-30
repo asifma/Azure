@@ -175,7 +175,7 @@ Process {
         }
     }
 
-<#
+    <#
     #initialize and format datadisk
     $newdisk = @(get-disk | Where-Object partitionstyle -eq 'raw')
     $Labels = @('agentdisk', 'Data', 'System', 'OS', 'Data', 'System')
@@ -210,9 +210,17 @@ Process {
     Write-Host "Forcing Powershell to use TLS 1.2 for Network Communication"
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-    Write-Host "################ Begin Installation of Azure DevOps Agent ################"
-    Install-Component -Component $Software.DEVOPSAGENT -Arguments "--unattended --url  https://dev.azure.com/$TeamAccount --auth pat --token $PATToken --pool ""$PoolName"" --agent $ENV:COMPUTERNAME --work F:\agent\_work --runAsService --windowsLogonAccount ""NT AUTHORITY\SYSTEM"""
-    Write-Host "################ End Installation of Azure DevOps Agent ################"
+    ForEach ($Param In $PsBoundParameters.Keys) {
+        if ($Software.$Param) {
+            Write-Host "################ Begin $Param ################"
+            Install-Component -Component $Software.$Param
+            Write-Host "################ End $Param ################"
+            Write-Host ""
+        }
+    }
 
+    Write-Host "################ Begin Installation of Azure DevOps Agent ################"
+    #Install-Component -Component $Software.DEVOPSAGENT -Arguments "--unattended --url  https://dev.azure.com/$TeamAccount --auth pat --token $PATToken --pool ""$PoolName"" --agent $ENV:COMPUTERNAME --work F:\agent\_work --runAsService --windowsLogonAccount ""NT AUTHORITY\SYSTEM"""
+    Write-Host "################ End Installation of Azure DevOps Agent ################"
 
 }
