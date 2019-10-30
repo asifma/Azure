@@ -5,6 +5,12 @@
     "HashType": "SHA256",
     "CmdLine": "config.cmd"
   },
+  "Az": {
+    "PSLine": "Install-Module Az -Force -AllowClobber; Disable-AzContextAutosave"
+  },
+  "AzureRM": {
+    "PSLine": "Install-Module AzureRM -Force -AllowClobber; Disable-AzureRmContextAutosave"
+  },
   "VSTS": {
     "Uri": "https://vstsagentpackage.azureedge.net/agent/2.140.0/vsts-agent-win-x64-2.140.0.zip",
     "Hash": "7CAB582D6A05B1147B023423CA9EE43E320CE70BDE11615E8D60E92415FC438C",
@@ -106,15 +112,6 @@
           "HashType": "SHA256",
           "CmdLine": "DACFramework.msi"
         }
-      }
-    ]
-  },
-  "AzureRM": {
-    "PSLine": "Install-Module AzureRM -Force -AllowClobber -RequiredVersion 6.8.1",
-    "EnvironmentalVariables": [
-      {
-        "Name": "AzurePS",
-        "Value": "6.8.1"
       }
     ]
   },
