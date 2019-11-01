@@ -3,7 +3,9 @@ Param(
     [string] $TeamAccount,
     [string] $PoolName = "default",
     [Parameter(Mandatory)]
-    [string] $PATToken
+    [string] $PATToken,
+    [string] $Unregister = "false",
+    [string] $AgentSetupPath = "C:\Packages\AzureDevOpsAgent\vsts-agent-win-x64-2.159.2\config.cmd"
 )
 
 DynamicParam {
@@ -175,52 +177,71 @@ Process {
         }
     }
 
-    <#
-    #initialize and format datadisk
-    $newdisk = @(get-disk | Where-Object partitionstyle -eq 'raw')
-    $Labels = @('agentdisk', 'Data', 'System', 'OS', 'Data', 'System')
+    Write-Host "################ Script starts ################"
 
-    for ($i = 0; $i -lt $newdisk.Count ; $i++) {
+    if ($Unregister -eq "true") {
 
-        $disknum = $newdisk[$i].Number
-        $dl = get-Disk $disknum | 
-            Initialize-Disk -PartitionStyle GPT -PassThru | 
-            New-Partition -AssignDriveLetter -UseMaximumSize
-        Format-Volume -driveletter $dl.Driveletter -FileSystem NTFS -NewFileSystemLabel $Labels[$i] -Confirm:$false
+        Write-Host "################ Begin Remove of Azure DevOps Agent ################"
 
-    }
-#>
-    $Software = $null
+        $Result = Start-Process -FilePath $AgentSetupPath -ArgumentList "remove --unattended --url  https://dev.azure.com/$TeamAccount --auth pat --token $PATToken" -NoNewWindow -Wait -PassThru
+        Write-Host ("Exit code: {0}" -f $Result.ExitCode)
 
-    if (Test-Path -Path .\software.json) {
-        $Software = Get-Content -Path .\software.json | ConvertFrom-Json
     }
     else {
-        throw ("software.json cannot be found at '{0}'" -f (Resolve-Path -Path .\).Path)
-    }
 
-    If (-not (get-PackageProvider | ? { $_.Name -eq "NuGet" -and $_.Version -gt "2.8.5.201" })) {
-        Write-Host "Installing NuGet Package Provider"
-        Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force | Out-Null
-    }
+        Write-Host "################ Format Datadisks ################"
 
-    Write-Host "Setting PSGallery as a trusted source"
-    Set-PSRepository -Name PSGallery -InstallationPolicy Trusted | Out-Null
+        <#
+        #initialize and format datadisk
+        $newdisk = @(get-disk | Where-Object partitionstyle -eq 'raw')
+        $Labels = @('agentdisk', 'Data', 'System', 'OS', 'Data', 'System')
 
-    Write-Host "Forcing Powershell to use TLS 1.2 for Network Communication"
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        for ($i = 0; $i -lt $newdisk.Count ; $i++) {
 
-    ForEach ($Param In $PsBoundParameters.Keys) {
-        if ($Software.$Param) {
-            Write-Host "################ Begin $Param ################"
-            Install-Component -Component $Software.$Param
-            Write-Host "################ End $Param ################"
-            Write-Host ""
+            $disknum = $newdisk[$i].Number
+            $dl = get-Disk $disknum | 
+                Initialize-Disk -PartitionStyle GPT -PassThru | 
+                New-Partition -AssignDriveLetter -UseMaximumSize
+            Format-Volume -driveletter $dl.Driveletter -FileSystem NTFS -NewFileSystemLabel $Labels[$i] -Confirm:$false
+
         }
-    }
+        #>
 
-    Write-Host "################ Begin Installation of Azure DevOps Agent ################"
-    #Install-Component -Component $Software.DEVOPSAGENT -Arguments "--unattended --url  https://dev.azure.com/$TeamAccount --auth pat --token $PATToken --pool ""$PoolName"" --agent $ENV:COMPUTERNAME --work F:\agent\_work --runAsService --windowsLogonAccount ""NT AUTHORITY\SYSTEM"""
-    Write-Host "################ End Installation of Azure DevOps Agent ################"
+        "################ Begin installation of dependencies ################"
+
+        $Software = $null
+
+        if (Test-Path -Path .\software.json) {
+            $Software = Get-Content -Path .\software.json | ConvertFrom-Json
+        }
+        else {
+            throw ("software.json cannot be found at '{0}'" -f (Resolve-Path -Path .\).Path)
+        }
+
+        If (-not (get-PackageProvider | ? { $_.Name -eq "NuGet" -and $_.Version -gt "2.8.5.201" })) {
+            Write-Host "Installing NuGet Package Provider"
+            Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force | Out-Null
+        }
+
+        Write-Host "Setting PSGallery as a trusted source"
+        Set-PSRepository -Name PSGallery -InstallationPolicy Trusted | Out-Null
+
+        Write-Host "Forcing Powershell to use TLS 1.2 for Network Communication"
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+        ForEach ($Param In $PsBoundParameters.Keys) {
+            if ($Software.$Param) {
+                Write-Host "################ Begin $Param ################"
+                Install-Component -Component $Software.$Param
+                Write-Host "################ End $Param ################"
+                Write-Host ""
+            }
+        }
+
+        Write-Host "################ Begin Installation of Azure DevOps Agent ################"
+        #Install-Component -Component $Software.DEVOPSAGENT -Arguments "--unattended --url  https://dev.azure.com/$TeamAccount --auth pat --token $PATToken --pool ""$PoolName"" --agent $ENV:COMPUTERNAME --work F:\agent\_work --runAsService --windowsLogonAccount ""NT AUTHORITY\SYSTEM"""
+        Write-Host "################ End Installation of Azure DevOps Agent ################"
+
+    }
 
 }
